@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  # 服务 1: 你的电商后端 App
+  app:
+    container_name: ecommerce-app
+    build: .                        # 在当前目录寻找 Dockerfile 构建
+    ports:
+      - "80:8080"                   # ★重点★：把电脑的 80 端口映射到容器的 8080
+    depends_on:
+      - mysqldb                     # 必须等数据库启动了再启动 App
+    environment:
+      # ★重点★：覆盖 application.yml 里的配置
+      # 在 Docker 里，主机名不能写 localhost，必须写数据库的服务名 'mysqldb'
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/ecommerce_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      # 强制显示报错信息 (方便调试 500 错误)
+      SERVER_ERROR_INCLUDE_MESSAGE: always
+      SERVER_ERROR_INCLUDE_STACKTRACE: always
+
+  # 服务 2: MySQL 数据库
+  mysqldb:
+    image: mysql:8.0
+    container_name: ecommerce-mysql-prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecommerce_db
+    volumes:
+      - db_data_prod:/var/lib/mysql # 数据持久化，防止重启后数据丢失
+
+volumes:
+  db_data_prod:
